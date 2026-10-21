@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포켓몬 가챠 & 강화 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #1a202c; /* Tailwind gray-900 */
+            color: #e2e8f0; /* Tailwind gray-200 */
+            user-select: none;
+        }
+
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096; 
+        }
+
+        /* 애니메이션 */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .gacha-shake {
+            animation: shake 0.5s;
+            animation-iteration-count: infinite;
+        }
+        
+        @keyframes glowLegendary {
+            0% { box-shadow: 0 0 5px #fbbf24, 0 0 10px #fbbf24, 0 0 15px #f59e0b; }
+            50% { box-shadow: 0 0 10px #fcd34d, 0 0 20px #fbbf24, 0 0 30px #f59e0b; }
+            100% { box-shadow: 0 0 5px #fbbf24, 0 0 10px #fbbf24, 0 0 15px #f59e0b; }
+        }
+        .glow-Legendary { animation: glowLegendary 1.5s infinite; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: popIn 0.3s ease-out forwards; }
+
+        /* 등급별 색상 */
+        .rarity-Common { border-color: #9ca3af; background: linear-gradient(135deg, #4b5563, #374151); }
+        .rarity-Rare { border-color: #60a5fa; background: linear-gradient(135deg, #2563eb, #1e3a8a); }
+        .rarity-Epic { border-color: #c084fc; background: linear-gradient(135deg, #9333ea, #581c87); }
+        .rarity-Legendary { border-color: #fbbf24; background: linear-gradient(135deg, #d97706, #78350f); }
+        
+        /* 새로운 등급 추가 */
+        .rarity-Mythic { border-color: #f43f5e; background: linear-gradient(135deg, #e11d48, #881337); }
+        .rarity-Divine { border-color: #2dd4bf; background: linear-gradient(135deg, #14b8a6, #0f766e); }
+        
+        .text-Common { color: #9ca3af; }
+        .text-Rare { color: #60a5fa; }
+        .text-Epic { color: #c084fc; }
+        .text-Legendary { color: #fbbf24; }
+        .text-Mythic { color: #f43f5e; }
+        .text-Divine { color: #2dd4bf; }
+
+        @keyframes glowMythic {
+            0% { box-shadow: 0 0 5px #f43f5e, 0 0 10px #e11d48, 0 0 15px #be123c; }
+            50% { box-shadow: 0 0 10px #fb7185, 0 0 20px #f43f5e, 0 0 30px #e11d48; }
+            100% { box-shadow: 0 0 5px #f43f5e, 0 0 10px #e11d48, 0 0 15px #be123c; }
+        }
+        .glow-Mythic { animation: glowMythic 1.5s infinite; }
+
+        @keyframes glowDivine {
+            0% { box-shadow: 0 0 5px #2dd4bf, 0 0 10px #14b8a6, 0 0 15px #0f766e; }
+            50% { box-shadow: 0 0 10px #5eead4, 0 0 20px #2dd4bf, 0 0 30px #14b8a6; }
+            100% { box-shadow: 0 0 5px #2dd4bf, 0 0 10px #14b8a6, 0 0 15px #0f766e; }
+        }
+        .glow-Divine { animation: glowDivine 1.5s infinite; }
+
+        .cursor-sell { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>') 12 12, auto !important; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-lg shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-500 rounded-full border-4 border-white relative overflow-hidden flex items-center justify-center">
+                <div class="absolute w-full h-1/2 bg-white bottom-0"></div>
+                <div class="w-3 h-3 bg-white rounded-full border-2 border-gray-800 z-10"></div>
+            </div>
+            <h1 class="text-2xl font-bold tracking-wider text-yellow-400 drop-shadow-md">포켓몬 갓챠 & 강화</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleBattleModal()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 transform hover:scale-105">
+                ⚔️ 배틀장 (B)
+            </button>
+            <div class="bg-gray-900 px-4 py-2 rounded-lg border border-gray-600 flex items-center gap-2">
+                <span class="text-xl">🪙</span>
+                <span id="coin-display" class="text-xl font-bold text-yellow-300">1000</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- 왼쪽: 가챠 섹션 -->
+        <section class="lg:w-1/3 p-4 flex flex-col border-r border-gray-700 bg-gray-800/50 relative">
+            <h2 class="text-xl text-center mb-4 text-blue-300">몬스터볼 투척! (뽑기)</h2>
+            
+            <div class="flex-1 flex items-center justify-center relative">
+                <!-- 결과 표시 영역 -->
+                <div id="gacha-result" class="hidden flex-col items-center justify-center w-full max-w-sm p-6 rounded-2xl border-4 bg-gray-800 text-center relative z-10">
+                    <span id="gacha-rarity-badge" class="px-3 py-1 rounded-full text-sm font-bold mb-2 bg-black/50">Rare</span>
+                    <img id="gacha-img" src="" alt="포켓몬" class="w-48 h-48 object-contain drop-shadow-2xl">
+                    <h3 id="gacha-name" class="text-3xl mt-4 font-bold">피카츄</h3>
+                    <div class="text-gray-300 mt-2 space-y-1 text-lg">
+                        <p>❤️ 체력: <span id="gacha-hp"></span></p>
+                        <p>⚔️ 공격: <span id="gacha-atk"></span></p>
+                        <p>✨ 기술: <span id="gacha-skill" class="text-green-400"></span></p>
+                    </div>
+                </div>
+
+                <!-- 대기/뽑기 애니메이션 영역 -->
+                <div id="gacha-idle" class="flex flex-col items-center justify-center">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" id="pokeball-img" class="w-32 h-32 drop-shadow-lg" alt="몬스터볼">
+                    <p class="text-gray-400 mt-4">100 🪙를 내고 포켓몬을 뽑아보세요!</p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="pullGacha(1)" id="btn-pull-1" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-xl font-bold shadow-lg transition transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    1회 뽑기 (100 🪙)
+                </button>
+            </div>
+            
+            <!-- 확률 안내 -->
+            <div class="mt-4 text-sm text-gray-400 text-center flex flex-wrap justify-center gap-3">
+                <span class="text-Common">Common: 50%</span>
+                <span class="text-Rare">Rare: 30%</span>
+                <span class="text-Epic">Epic: 12%</span>
+                <span class="text-Legendary">Legendary: 6.5%</span>
+                <span class="text-Mythic font-bold drop-shadow">Mythic: 1.2%</span>
+                <span class="text-Divine font-bold drop-shadow">Divine: 0.3%</span>
+            </div>
+        </section>
+
+        <!-- 오른쪽: 인벤토리 및 강화 섹션 -->
+        <section class="lg:w-2/3 flex flex-col bg-gray-900 overflow-hidden relative">
+            
+            <!-- 인벤토리 그리드 (전체 화면으로 확장) -->
+            <div class="flex-1 p-4 overflow-y-auto">
+                <h3 class="text-lg mb-3 flex justify-between items-center sticky top-0 bg-gray-900/90 py-2 z-10 backdrop-blur-sm">
+                    <span>내 포켓몬 보관함 <span class="text-xs text-yellow-300 ml-2 bg-gray-800 border border-gray-600 px-2 py-1 rounded">💡 [Q]: 판매소 | [T]: 강화소 | [B]: 배틀장 | [V]: 클라우드 저장</span></span>
+                    <span class="text-sm text-gray-400">총 <span id="inventory-count">0</span>마리</span>
+                </h3>
+                <div id="inventory-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-3 pb-10">
+                    <!-- 포켓몬 아이템들이 여기에 추가됨 -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 판매 창 모달 -->
+    <div id="sell-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-900 border-2 border-yellow-500 rounded-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-4">
+                <h2 class="text-2xl font-bold text-yellow-400 flex items-center gap-2">💰 포켓몬 판매소 <span class="text-sm text-gray-400 font-normal ml-2">(클릭 시 즉시 판매됩니다)</span></h2>
+                <button onclick="toggleSellModal()" class="text-gray-400 hover:text-red-500 text-4xl font-bold transition transform hover:scale-110">&times;</button>
+            </div>
+            <div id="sell-grid" class="flex-1 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 pr-2 pb-10">
+                <!-- Sell items here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 강화 창 모달 (신규 추가) -->
+    <div id="enhance-modal" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-900 border-2 border-blue-500 rounded-2xl w-full max-w-5xl h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-800 shrink-0">
+                <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">🛠️ 포켓몬 강화소 <span class="text-sm text-gray-400 font-normal ml-2">(T 키를 눌러 연속 강화 가능)</span></h2>
+                <button onclick="toggleEnhanceModal()" class="text-gray-400 hover:text-red-500 text-4xl font-bold transition transform hover:scale-110">&times;</button>
+            </div>
+            <div class="flex flex-1 overflow-hidden">
+                <!-- 좌측: 강화 정보 -->
+                <div class="w-1/3 bg-gray-800 border-r border-gray-700 p-6 flex flex-col items-center overflow-y-auto shrink-0 relative">
+                    <div id="enhance-placeholder" class="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center text-gray-500 z-10">
+                        <span class="text-5xl mb-4">👈</span>
+                        <p class="text-xl text-center">우측에서 강화할<br>포켓몬을 선택하세요.</p>
+                    </div>
+                    
+                    <div id="enhance-panel" class="w-full flex flex-col items-center">
+                        <div id="enhance-img-container" class="w-40 h-40 rounded-xl border-4 flex items-center justify-center bg-gray-900 mb-4 shrink-0 transition-transform">
+                            <img id="enhance-img" src="" class="w-32 h-32 object-contain">
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mb-3">
+                            <span id="enhance-rarity" class="px-2 py-1 rounded text-xs font-bold border"></span>
+                            <h2 id="enhance-name" class="text-2xl font-bold text-white"></h2>
+                            <span id="enhance-level" class="text-xl text-yellow-400">Lv.1</span>
+                        </div>
+                        
+                        <div class="w-full bg-gray-700/50 p-3 rounded-lg mb-2">
+                            <p class="text-gray-400 text-sm">❤️ 체력 (HP)</p>
+                            <p class="font-bold text-green-400"><span id="enhance-hp"></span> <span id="next-hp" class="text-sm text-green-200 hidden"></span></p>
+                        </div>
+                        <div class="w-full bg-gray-700/50 p-3 rounded-lg mb-2">
+                            <p class="text-gray-400 text-sm">⚔️ 공격력 (ATK)</p>
+                            <p class="font-bold text-red-400"><span id="enhance-atk"></span> <span id="next-atk" class="text-sm text-red-200 hidden"></span></p>
+                        </div>
+                        <div class="w-full bg-gray-700/50 p-3 rounded-lg mb-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-gray-400 text-sm">✨ 기술</p>
+                                <div id="next-skill-info" class="text-xs text-yellow-300"></div>
+                            </div>
+                            <p id="enhance-skill" class="font-bold text-blue-300"></p>
+                        </div>
+                        
+                        <div class="w-full flex items-center gap-2 mt-auto">
+                            <button onclick="attemptEnhance()" id="btn-enhance" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold text-lg shadow-lg transition transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>강화 시도 (T)</span>
+                                <span class="text-xs bg-black/30 px-2 py-1 rounded-full mt-1"><span id="enhance-cost">100</span> 🪙</span>
+                            </button>
+                            <div class="text-center bg-gray-900 px-3 py-2 rounded-lg border border-gray-700 shrink-0">
+                                <p class="text-xs text-gray-400">성공률</p>
+                                <p id="enhance-prob" class="font-bold text-green-400">100%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 우측: 강화 선택용 인벤토리 -->
+                <div class="w-2/3 p-4 overflow-y-auto bg-gray-900 relative">
+                    <div id="enhance-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-10">
+                        <!-- Items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 배틀장 창 모달 -->
+    <div id="battle-modal" class="hidden fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-gray-900 border-2 border-red-500 rounded-2xl w-full max-w-6xl h-[85vh] flex flex-col shadow-[0_0_50px_rgba(239,68,68,0.3)] overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-800 shrink-0">
+                <h2 class="text-2xl font-bold text-red-400 flex items-center gap-2">⚔️ 포켓몬 배틀 아레나</h2>
+                <button onclick="toggleBattleModal()" class="text-gray-400 hover:text-red-500 text-4xl font-bold transition transform hover:scale-110">&times;</button>
+            </div>
+            
+            <div class="flex flex-1 overflow-hidden">
+                <!-- 좌측: 내 포켓몬 선택 -->
+                <div class="w-1/4 bg-gray-800 border-r border-gray-700 p-4 flex flex-col h-full overflow-hidden shrink-0">
+                    <h3 class="text-center text-lg text-blue-300 font-bold mb-3 border-b border-gray-700 pb-2">나의 출전 포켓몬</h3>
+                    <div id="battle-inventory" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 content-start pr-1">
+                        <!-- 배틀용 인벤토리 -->
+                    </div>
+                </div>
+
+                <!-- 중앙: 배틀 필드 -->
+                <div class="w-2/4 p-6 flex flex-col relative bg-gray-800/50">
+                    <!-- 난이도 선택 -->
+                    <div class="flex flex-wrap justify-center gap-2 mb-6 shrink-0 z-10 text-sm">
+                        <button onclick="setDifficulty('easy')" id="btn-diff-easy" class="px-3 py-1.5 rounded font-bold border-2 border-green-500 text-green-500 hover:bg-green-500/20">쉬움 (보상: 50🪙)</button>
+                        <button onclick="setDifficulty('normal')" id="btn-diff-normal" class="px-3 py-1.5 rounded font-bold border-2 border-blue-500 text-blue-500 hover:bg-blue-500/20">보통 (보상: 150🪙)</button>
+                        <button onclick="setDifficulty('hard')" id="btn-diff-hard" class="px-3 py-1.5 rounded font-bold border-2 border-purple-500 text-purple-500 hover:bg-purple-500/20">어려움 (보상: 500🪙)</button>
+                        <button onclick="setDifficulty('veryhard')" id="btn-diff-veryhard" class="px-3 py-1.5 rounded font-bold border-2 border-red-500 text-red-500 hover:bg-red-500/20">매우어려움 (보상: 2000🪙)</button>
+                    </div>
+
+                    <!-- 캐릭터 표시 영역 -->
+                    <div class="flex justify-between items-center mb-6 px-4">
+                        <!-- 내 포켓몬 -->
+                        <div class="flex flex-col items-center w-1/3">
+                            <h4 id="battle-my-name" class="text-xl font-bold text-blue-400 mb-2 truncate w-full text-center">선택 대기중</h4>
+                            <div id="battle-my-img-box" class="w-32 h-32 bg-gray-900 border-4 border-gray-600 rounded-full flex items-center justify-center mb-2 overflow-hidden relative">
+                                <img id="battle-my-img" src="" class="w-24 h-24 object-contain hidden">
+                            </div>
+                            <div class="w-full bg-gray-700 h-4 rounded-full overflow-hidden border border-gray-600">
+                                <div id="battle-my-hp-bar" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+                            </div>
+                            <p class="text-sm mt-1 text-gray-300">HP: <span id="battle-my-hp">0</span> / <span id="battle-my-maxhp">0</span></p>
+                            <p class="text-sm text-gray-300">ATK: <span id="battle-my-atk">0</span></p>
+                        </div>
+                        
+                        <div class="text-4xl font-bold text-yellow-500 italic drop-shadow-lg">VS</div>
+
+                        <!-- 적 포켓몬 -->
+                        <div class="flex flex-col items-center w-1/3">
+                            <h4 id="battle-enemy-name" class="text-xl font-bold text-red-400 mb-2 truncate w-full text-center">상대 대기중</h4>
+                            <div id="battle-enemy-img-box" class="w-32 h-32 bg-gray-900 border-4 border-red-500 rounded-full flex items-center justify-center mb-2 overflow-hidden relative">
+                                <img id="battle-enemy-img" src="" class="w-24 h-24 object-contain hidden">
+                            </div>
+                            <div class="w-full bg-gray-700 h-4 rounded-full overflow-hidden border border-gray-600">
+                                <div id="battle-enemy-hp-bar" class="h-full bg-red-500 w-0 transition-all duration-300"></div>
+                            </div>
+                            <p class="text-sm mt-1 text-gray-300">HP: <span id="battle-enemy-hp">0</span> / <span id="battle-enemy-maxhp">0</span></p>
+                            <p class="text-sm text-gray-300">ATK: <span id="battle-enemy-atk">0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- 중앙 액션/로그 영역 -->
+                    <div class="flex flex-col items-center flex-1 min-h-0">
+                        <button onclick="startBattle()" id="btn-start-battle" class="w-2/3 py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xl rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.5)] transition transform hover:scale-105 mb-4 disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                            전투 시작!
+                        </button>
+                        
+                        <!-- 전투 로그 -->
+                        <div id="battle-log" class="w-full flex-1 bg-black/80 border border-gray-700 rounded-lg p-3 overflow-y-auto text-sm space-y-2 font-mono text-gray-300 scroll-smooth">
+                            <p class="text-center text-gray-500 mt-10">난이도와 출전 포켓몬을 선택하고 전투를 시작하세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 우측: 적 정보 상세 -->
+                <div class="w-1/4 bg-gray-800 border-l border-gray-700 p-4 flex flex-col items-center text-center shrink-0">
+                    <h3 class="text-lg text-red-300 font-bold mb-4">적 정보</h3>
+                    <div id="enemy-info-panel" class="opacity-50 w-full">
+                        <p class="text-gray-400 mb-2 text-sm">현재 선택된 난이도</p>
+                        <p id="info-diff-text" class="text-2xl font-bold text-white mb-6 break-words">-</p>
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 inline-block text-left w-full">
+                            <p class="text-sm text-gray-400 mb-1">예상 스탯</p>
+                            <p>❤️ 체력: <span id="info-enemy-hp" class="font-bold text-green-400">?</span></p>
+                            <p>⚔️ 공격력: <span id="info-enemy-atk" class="font-bold text-red-400">?</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pokemon-app';
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        } catch(e) {}
+
+        let db, auth, userId;
+        
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase init failed:", e);
+        }
+
+        async function initAuth() {
+            if (!auth) return;
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                    userId = userCredential.user.uid;
+                } else {
+                    const userCredential = await signInAnonymously(auth);
+                    userId = userCredential.user.uid;
+                }
+                
+                // Auto-load data after auth
+                const saveRef = doc(db, 'artifacts', appId, 'users', userId, 'gameState', 'saveData');
+                const docSnap = await getDoc(saveRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (window.applySaveData) {
+                        window.applySaveData(data.coins, data.inventory);
+                    }
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+            }
+        }
+
+        window.dbSave = async function(coins, inventory) {
+            if (!userId || !db) return false;
+            const saveRef = doc(db, 'artifacts', appId, 'users', userId, 'gameState', 'saveData');
+            try {
+                await setDoc(saveRef, { coins, inventory });
+                return true;
+            } catch (e) {
+                console.error("Save error:", e);
+                return false;
+            }
+        };
+
+        initAuth();
+    </script>
+
+    <script>
+        // --- 데이터베이스 설정 ---
+        const POKEMON_DB = [
+            { id: 16, name: '구구', rarity: 'Common', baseHp: 40, baseAtk: 45, skill: '몸통박치기' },
+            { id: 19, name: '꼬렛', rarity: 'Common', baseHp: 30, baseAtk: 56, skill: '전광석화' },
+            { id: 10, name: '캐터피', rarity: 'Common', baseHp: 45, baseAtk: 30, skill: '실뿜기' },
+            { id: 41, name: '주뱃', rarity: 'Common', baseHp: 40, baseAtk: 45, skill: '흡혈' },
+            
+            { id: 25, name: '피카츄', rarity: 'Rare', baseHp: 135, baseAtk: 155, skill: '전기쇼크' },
+            { id: 4, name: '파이리', rarity: 'Rare', baseHp: 139, baseAtk: 152, skill: '할퀴기' },
+            { id: 7, name: '꼬부기', rarity: 'Rare', baseHp: 144, baseAtk: 148, skill: '물대포' },
+            { id: 1, name: '이상해씨', rarity: 'Rare', baseHp: 145, baseAtk: 149, skill: '덩굴채찍' },
+            
+            { id: 143, name: '잠만보', rarity: 'Epic', baseHp: 460, baseAtk: 210, skill: '누르기' },
+            { id: 130, name: '갸라도스', rarity: 'Epic', baseHp: 295, baseAtk: 325, skill: '물기' },
+            { id: 149, name: '망나뇽', rarity: 'Epic', baseHp: 310, baseAtk: 334, skill: '용의분노' },
+            
+            { id: 150, name: '뮤츠', rarity: 'Legendary', baseHp: 606, baseAtk: 610, skill: '염동력' },
+            { id: 384, name: '레쿠쟈', rarity: 'Legendary', baseHp: 605, baseAtk: 650, skill: '용의숨결' },
+            { id: 249, name: '루기아', rarity: 'Legendary', baseHp: 650, baseAtk: 590, skill: '에어로블라스트' },
+            
+            // 신규 추가 등급
+            { id: 483, name: '디아루가', rarity: 'Mythic', baseHp: 800, baseAtk: 820, skill: '시간의포효' },
+            { id: 484, name: '펄기아', rarity: 'Mythic', baseHp: 800, baseAtk: 820, skill: '공간절단' },
+            
+            { id: 493, name: '아르세우스', rarity: 'Divine', baseHp: 1200, baseAtk: 1200, skill: '심판의뭉치' },
+            { id: 151, name: '뮤', rarity: 'Divine', baseHp: 1000, baseAtk: 1000, skill: '사이코웨이브' }
+        ];
+
+        // 스킬 진화 트리 (기본스킬 -> Lv.5 스킬 -> Lv.10 스킬)
+        const SKILL_TREE = {
+            '몸통박치기': ['날개치기', '브레이브버드'],
+            '전광석화': ['필살앞니', '분노의앞니'],
+            '실뿜기': ['벌레먹기', '벌레의야단법석'],
+            '흡혈': ['물기', '크로스포이즌'],
+            '전기쇼크': ['10만볼트', '번개'],
+            '할퀴기': ['화염방사', '불대문자'],
+            '물대포': ['파도타기', '하이드로펌프'],
+            '덩굴채찍': ['잎날가르기', '솔라빔'],
+            '누르기': ['헤비봄버', '파괴광선'],
+            '물기': ['깨물어부수기', '아쿠아테일'],
+            '용의분노': ['드래곤크루', '역린'],
+            '염동력': ['사이코키네시스', '사이코브레이크'],
+            '용의숨결': ['용성군', '화룡점정'],
+            '에어로블라스트': ['신통력', '불새'],
+            '시간의포효': ['메탈크로우', '러스터캐논'],
+            '공간절단': ['물의파동', '하이드로펌프'],
+            '심판의뭉치': ['파괴광선', '신속'],
+            '사이코웨이브': ['환상빔', '미러코트']
+        };
+
+        // 이미지 URL 헬퍼
+        const getOfficialArtwork = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+        const getPixelSprite = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
+        // --- 전역 상태 ---
+        let coins = 1000;
+        let inventory = [];
+        let selectedUid = null;
+        let isGachaRolling = false;
+        let isSellModalOpen = false;
+        let isEnhanceModalOpen = false;
+        
+        // 배틀 관련 상태
+        let isBattleModalOpen = false;
+        let battleDifficulty = 'easy'; // easy, normal, hard, veryhard
+        let battleMyUid = null;
+        let battleEnemy = null;
+        let isBattling = false;
+
+        // Firebase 연동용 세이브 데이터 적용 함수
+        window.applySaveData = function(savedCoins, savedInventory) {
+            coins = savedCoins;
+            inventory = savedInventory || [];
+            updateCoins(0);
+            renderInventory();
+            showFeedbackMessage('클라우드 세이브 로드 완료! 📂', 'text-blue-400');
+        };
+
+        // 키보드 이벤트 리스너 추가 (단축키 지원)
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'v') {
+                if (window.dbSave) {
+                    window.dbSave(coins, inventory).then(success => {
+                        if(success) showFeedbackMessage('클라우드 저장 완료! 💾', 'text-green-400');
+                        else showFeedbackMessage('저장 실패 (클라우드 연결 대기중)', 'text-red-500');
+                    });
+                }
+            }
+            if (e.key.toLowerCase() === 'q') {
+                toggleSellModal();
+            }
+            if (e.key.toLowerCase() === 'm') {
+                updateCoins(9999999999999);
+                showFeedbackMessage('치트 활성화! 💰', 'text-yellow-400');
+            }
+            if (e.key.toLowerCase() === 't') {
+                if (isSellModalOpen || isBattleModalOpen) return;
+                if (!isEnhanceModalOpen) {
+                    toggleEnhanceModal();
+                } else if (selectedUid) {
+                    attemptEnhance();
+                } else {
+                    toggleEnhanceModal();
+                }
+            }
+            if (e.key.toLowerCase() === 'b') {
+                toggleBattleModal();
+            }
+            if (e.key === 'Escape') {
+                if (isSellModalOpen) toggleSellModal();
+                if (isEnhanceModalOpen) toggleEnhanceModal();
+                if (isBattleModalOpen && !isBattling) toggleBattleModal();
+            }
+        });
+
+        // 고유 ID 생성기
+        const generateUid = () => Math.random().toString(36).substr(2, 9);
+
+        // --- 초기화 및 UI 업데이트 ---
+        function updateCoins(amount) {
+            coins += amount;
+            document.getElementById('coin-display').innerText = coins;
+            checkButtons();
+        }
+
+        function checkButtons() {
+            document.getElementById('btn-pull-1').disabled = coins < 100 || isGachaRolling;
+            
+            if(selectedUid) {
+                const p = inventory.find(i => i.uid === selectedUid);
+                const cost = getEnhanceCost(p.level);
+                document.getElementById('btn-enhance').disabled = coins < cost || p.level >= 15;
+            }
+        }
+
+        // --- STREAMING_CHUNK:Gacha Logic ---
+        function pullGacha() {
+            if (coins < 100 || isGachaRolling) return;
+            
+            updateCoins(-100);
+            isGachaRolling = true;
+            checkButtons();
+
+            // UI 상태 변경
+            const resultDiv = document.getElementById('gacha-result');
+            const idleDiv = document.getElementById('gacha-idle');
+            const pokeballImg = document.getElementById('pokeball-img');
+            
+            resultDiv.classList.add('hidden');
+            resultDiv.classList.remove('pop-in');
+            idleDiv.classList.remove('hidden');
+            pokeballImg.classList.add('gacha-shake');
+
+            // 확률 계산 (C: 50%, R: 30%, E: 12%, L: 6.5%, M: 1.2%, D: 0.3%)
+            let roll = Math.random() * 100;
+            let targetRarity = 'Common';
+            if (roll > 50 && roll <= 80) targetRarity = 'Rare';
+            else if (roll > 80 && roll <= 92) targetRarity = 'Epic';
+            else if (roll > 92 && roll <= 98.5) targetRarity = 'Legendary';
+            else if (roll > 98.5 && roll <= 99.7) targetRarity = 'Mythic';
+            else if (roll > 99.7) targetRarity = 'Divine';
+
+            // 해당 등급 포켓몬 중 랜덤 선택
+            const pool = POKEMON_DB.filter(p => p.rarity === targetRarity);
+            const selectedBase = pool[Math.floor(Math.random() * pool.length)];
+
+            // 인스턴스 생성
+            const newPokemon = {
+                uid: generateUid(),
+                ...selectedBase, // id, name, rarity, baseHp, baseAtk, skill
+                level: 1,
+                hp: selectedBase.baseHp,
+                atk: selectedBase.baseAtk,
+                currentSkill: selectedBase.skill
+            };
+
+            setTimeout(() => {
+                pokeballImg.classList.remove('gacha-shake');
+                idleDiv.classList.add('hidden');
+                
+                // 결과 UI 업데이트
+                document.getElementById('gacha-img').src = getOfficialArtwork(newPokemon.id);
+                document.getElementById('gacha-name').innerText = newPokemon.name;
+                document.getElementById('gacha-name').className = `text-3xl mt-4 font-bold text-${newPokemon.rarity}`;
+                
+                const badge = document.getElementById('gacha-rarity-badge');
+                badge.innerText = newPokemon.rarity;
+                badge.className = `px-3 py-1 rounded-full text-sm font-bold mb-2 border text-white rarity-${newPokemon.rarity}`;
+                
+                document.getElementById('gacha-hp').innerText = newPokemon.hp;
+                document.getElementById('gacha-atk').innerText = newPokemon.atk;
+                document.getElementById('gacha-skill').innerText = newPokemon.currentSkill;
+
+                resultDiv.classList.remove('glow-Legendary', 'glow-Epic', 'glow-Mythic', 'glow-Divine');
+                if (newPokemon.rarity !== 'Common' && newPokemon.rarity !== 'Rare') {
+                    resultDiv.classList.add(`glow-${newPokemon.rarity}`);
+                }
+
+                resultDiv.classList.remove('hidden');
+                resultDiv.classList.add('pop-in');
+
+                // 인벤토리 추가
+                inventory.unshift(newPokemon);
+                renderInventory();
+
+                isGachaRolling = false;
+                checkButtons();
+                
+            }, 1000); // 1초 연출
+        }
+
+        // --- STREAMING_CHUNK:Inventory Rendering ---
+        function renderInventory() {
+            const grid = document.getElementById('inventory-grid');
+            document.getElementById('inventory-count').innerText = inventory.length;
+            grid.innerHTML = '';
+
+            inventory.forEach(pokemon => {
+                const card = document.createElement('div');
+                const isSelected = selectedUid === pokemon.uid;
+                
+                card.className = `relative cursor-pointer rounded-xl border-2 p-2 flex flex-col items-center transition transform hover:scale-105 rarity-${pokemon.rarity} ${isSelected ? 'ring-4 ring-white shadow-xl' : 'opacity-80 hover:opacity-100'}`;
+                card.onclick = () => handlePokemonClick(pokemon.uid);
+
+                card.innerHTML = `
+                    <div class="absolute top-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-xs text-yellow-300 font-bold">Lv.${pokemon.level}</div>
+                    <img src="${getPixelSprite(pokemon.id)}" alt="${pokemon.name}" class="w-16 h-16 rendering-pixelated" loading="lazy">
+                    <p class="text-white text-sm font-bold mt-1">${pokemon.name}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- STREAMING_CHUNK:Select & Sell Logic ---
+        function handlePokemonClick(uid) {
+            selectedUid = uid;
+            if (!isEnhanceModalOpen) {
+                toggleEnhanceModal();
+            } else {
+                selectPokemonForEnhance(uid);
+            }
+        }
+
+        function toggleSellModal() {
+            if (isEnhanceModalOpen) return; // 강화창이 열려있으면 무시
+            const modal = document.getElementById('sell-modal');
+            isSellModalOpen = !isSellModalOpen;
+            if (isSellModalOpen) {
+                modal.classList.remove('hidden');
+                renderSellModal();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderSellModal() {
+            const grid = document.getElementById('sell-grid');
+            grid.innerHTML = '';
+            
+            if (inventory.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-20 text-xl">보유 중인 포켓몬이 없습니다.</p>';
+                return;
+            }
+
+            inventory.forEach(pokemon => {
+                const card = document.createElement('div');
+                const price = getSellPrice(pokemon);
+                
+                card.className = `relative cursor-pointer rounded-xl border-2 p-2 flex flex-col items-center transition transform hover:scale-105 hover:-translate-y-1 rarity-${pokemon.rarity}`;
+                card.onclick = () => sellPokemon(pokemon.uid);
+
+                card.innerHTML = `
+                    <div class="absolute top-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-xs text-yellow-300 font-bold">Lv.${pokemon.level}</div>
+                    <img src="${getPixelSprite(pokemon.id)}" alt="${pokemon.name}" class="w-16 h-16 rendering-pixelated" loading="lazy">
+                    <p class="text-white text-sm font-bold mt-1">${pokemon.name}</p>
+                    <div class="mt-2 bg-black/50 px-2 py-1 rounded w-full text-center">
+                        <span class="text-yellow-400 font-bold text-sm cursor-sell">${price} 🪙 판매</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function getSellPrice(pokemon) {
+            const baseRates = {
+                'Common': 30,
+                'Rare': 80,
+                'Epic': 250,
+                'Legendary': 1000,
+                'Mythic': 5000,
+                'Divine': 20000
+            };
+            return baseRates[pokemon.rarity] + (pokemon.level * 20);
+        }
+
+        function sellPokemon(uid) {
+            const index = inventory.findIndex(i => i.uid === uid);
+            if(index === -1) return;
+            
+            const p = inventory[index];
+            const price = getSellPrice(p);
+            
+            updateCoins(price);
+            inventory.splice(index, 1); // 인벤토리에서 제거
+            
+            if(selectedUid === uid) {
+                selectedUid = null;
+                document.getElementById('enhance-placeholder').classList.remove('hidden');
+            }
+            
+            showFeedbackMessage(`${price} 🪙 획득!`, 'text-yellow-400');
+            renderInventory();
+            
+            // 판매 창이 열려있다면 즉시 갱신
+            if (isSellModalOpen) {
+                renderSellModal();
+            }
+        }
+
+        function toggleEnhanceModal() {
+            if (isSellModalOpen) return;
+            const modal = document.getElementById('enhance-modal');
+            isEnhanceModalOpen = !isEnhanceModalOpen;
+            if (isEnhanceModalOpen) {
+                modal.classList.remove('hidden');
+                renderEnhanceModal();
+                if (selectedUid) selectPokemonForEnhance(selectedUid);
+            } else {
+                modal.classList.add('hidden');
+                renderInventory(); // 모달 닫을 때 메인 화면 선택 상태 갱신
+            }
+        }
+
+        function renderEnhanceModal() {
+            const grid = document.getElementById('enhance-grid');
+            grid.innerHTML = '';
+            
+            if (inventory.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-20 text-xl">보유 중인 포켓몬이 없습니다.</p>';
+                return;
+            }
+
+            inventory.forEach(pokemon => {
+                const card = document.createElement('div');
+                const isSelected = selectedUid === pokemon.uid;
+                
+                card.className = `relative cursor-pointer rounded-xl border-2 p-2 flex flex-col items-center transition transform hover:scale-105 rarity-${pokemon.rarity} ${isSelected ? 'ring-4 ring-white shadow-xl' : 'opacity-80 hover:opacity-100'}`;
+                card.onclick = () => selectPokemonForEnhance(pokemon.uid);
+
+                card.innerHTML = `
+                    <div class="absolute top-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-xs text-yellow-300 font-bold">Lv.${pokemon.level}</div>
+                    <img src="${getPixelSprite(pokemon.id)}" alt="${pokemon.name}" class="w-16 h-16 rendering-pixelated" loading="lazy">
+                    <p class="text-white text-sm font-bold mt-1 text-center">${pokemon.name}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectPokemonForEnhance(uid) {
+            selectedUid = uid;
+            renderEnhanceModal(); // 선택 테두리 갱신
+            
+            const p = inventory.find(i => i.uid === uid);
+            if(!p) return;
+
+            document.getElementById('enhance-placeholder').classList.add('hidden');
+            
+            // 정보 바인딩
+            document.getElementById('enhance-img').src = getOfficialArtwork(p.id);
+            const imgContainer = document.getElementById('enhance-img-container');
+            imgContainer.className = `w-40 h-40 rounded-xl border-4 flex items-center justify-center bg-gray-900 shrink-0 transition-transform rarity-${p.rarity}`;
+            
+            imgContainer.classList.remove('glow-Legendary', 'glow-Epic', 'glow-Mythic', 'glow-Divine');
+            if (p.rarity !== 'Common' && p.rarity !== 'Rare') {
+                imgContainer.classList.add(`glow-${p.rarity}`);
+            }
+
+            const badge = document.getElementById('enhance-rarity');
+            badge.innerText = p.rarity;
+            badge.className = `px-2 py-1 rounded text-xs font-bold border text-white rarity-${p.rarity}`;
+            
+            document.getElementById('enhance-name').innerText = p.name;
+            document.getElementById('enhance-name').className = `text-2xl font-bold text-${p.rarity}`;
+            document.getElementById('enhance-level').innerText = `Lv.${p.level}`;
+            
+            document.getElementById('enhance-hp').innerText = p.hp;
+            document.getElementById('enhance-atk').innerText = p.atk;
+            document.getElementById('enhance-skill').innerText = p.currentSkill;
+
+            updateEnhancePreview(p);
+            checkButtons();
+        }
+
+        // --- STREAMING_CHUNK:Enhancement Logic ---
+        function getEnhanceCost(level) {
+            return level * 100;
+        }
+
+        function getEnhanceProb(level) {
+            // 레벨별 성공 확률 계산
+            if(level < 3) return 100;
+            if(level < 5) return 80;
+            if(level < 8) return 60;
+            if(level < 10) return 40;
+            if(level < 13) return 20;
+            return 10;
+        }
+
+        function updateEnhancePreview(pokemon) {
+            const costSpan = document.getElementById('enhance-cost');
+            const probSpan = document.getElementById('enhance-prob');
+            const nextHp = document.getElementById('next-hp');
+            const nextAtk = document.getElementById('next-atk');
+            const nextSkillInfo = document.getElementById('next-skill-info');
+
+            if (pokemon.level >= 15) {
+                costSpan.innerText = 'MAX';
+                probSpan.innerText = '-';
+                probSpan.className = 'font-bold text-gray-500';
+                nextHp.classList.add('hidden');
+                nextAtk.classList.add('hidden');
+                nextSkillInfo.innerText = "최대 레벨 도달!";
+                document.getElementById('btn-enhance').innerHTML = `<span>강화 완료</span>`;
+                return;
+            }
+
+            const cost = getEnhanceCost(pokemon.level);
+            const prob = getEnhanceProb(pokemon.level);
+            
+            costSpan.innerText = cost;
+            probSpan.innerText = `${prob}%`;
+            probSpan.className = `font-bold ${prob >= 80 ? 'text-green-400' : prob >= 40 ? 'text-yellow-400' : 'text-red-500'}`;
+
+            // 다음 스탯 예상치 (15% 증가)
+            const addHp = Math.floor(pokemon.baseHp * 0.15);
+            const addAtk = Math.floor(pokemon.baseAtk * 0.15);
+            
+            nextHp.innerText = `▶ ${pokemon.hp + addHp}`;
+            nextHp.classList.remove('hidden');
+            nextAtk.innerText = `▶ ${pokemon.atk + addAtk}`;
+            nextAtk.classList.remove('hidden');
+
+            // 스킬 진화 안내
+            nextSkillInfo.innerText = "";
+            document.getElementById('btn-enhance').innerHTML = `
+                <span>강화 시도 (T)</span>
+                <span class="text-xs bg-black/30 px-2 py-1 rounded-full mt-1"><span id="enhance-cost">${cost}</span> 🪙</span>
+            `;
+
+            if (pokemon.level == 4) {
+                const nextS = SKILL_TREE[pokemon.skill][0];
+                nextSkillInfo.innerText = `(Lv.5 달성시 '${nextS}' 습득!)`;
+            } else if (pokemon.level == 9) {
+                const nextS = SKILL_TREE[pokemon.skill][1];
+                nextSkillInfo.innerText = `(Lv.10 달성시 '${nextS}' 습득!)`;
+            }
+        }
+
+        function attemptEnhance() {
+            if(!selectedUid) return;
+            const p = inventory.find(i => i.uid === selectedUid);
+            if(!p || p.level >= 15) return;
+
+            const cost = getEnhanceCost(p.level);
+            if (coins < cost) return;
+
+            updateCoins(-cost);
+            const prob = getEnhanceProb(p.level);
+            const roll = Math.random() * 100;
+
+            const imgContainer = document.getElementById('enhance-img-container');
+            
+            if (roll <= prob) {
+                // 성공
+                p.level++;
+                p.hp += Math.floor(p.baseHp * 0.15);
+                p.atk += Math.floor(p.baseAtk * 0.15);
+
+                // 스킬 진화 처리
+                let skillEvolved = false;
+                if (p.level === 5 && SKILL_TREE[p.skill]) {
+                    p.currentSkill = SKILL_TREE[p.skill][0];
+                    skillEvolved = true;
+                } else if (p.level === 10 && SKILL_TREE[p.skill]) {
+                    p.currentSkill = SKILL_TREE[p.skill][1];
+                    skillEvolved = true;
+                }
+
+                // 성공 이펙트
+                showFeedbackMessage('강화 성공!! ✨', 'text-green-400');
+                imgContainer.style.transform = 'scale(1.1)';
+                imgContainer.style.boxShadow = '0 0 20px #4ade80';
+                setTimeout(() => {
+                    imgContainer.style.transform = 'scale(1)';
+                    imgContainer.style.boxShadow = '';
+                }, 300);
+
+                if(skillEvolved) {
+                    setTimeout(() => showFeedbackMessage('새로운 기술 습득! ⚔️', 'text-blue-400'), 800);
+                }
+
+            } else {
+                // 실패
+                showFeedbackMessage('강화 실패... 💔', 'text-red-500');
+                imgContainer.classList.add('gacha-shake');
+                setTimeout(() => imgContainer.classList.remove('gacha-shake'), 500);
+            }
+
+            // UI 갱신
+            selectPokemonForEnhance(p.uid); 
+        }
+
+        function showFeedbackMessage(msg, colorClass) {
+            const fb = document.createElement('div');
+            fb.innerText = msg;
+            fb.className = `fixed top-1/2 left-2/3 transform -translate-x-1/2 -translate-y-1/2 text-5xl font-bold ${colorClass} drop-shadow-2xl z-50 pointer-events-none transition-all duration-1000`;
+            document.body.appendChild(fb);
+            
+            requestAnimationFrame(() => {
+                fb.style.transform = `translate(-50%, -150%) scale(1.2)`;
+                fb.style.opacity = '0';
+            });
+            setTimeout(() => fb.remove(), 1000);
+        }
+
+        function toggleBattleModal() {
+            if (isBattling) return; // 전투 중 닫기 방지
+            if (isSellModalOpen) toggleSellModal();
+            if (isEnhanceModalOpen) toggleEnhanceModal();
+            
+            const modal = document.getElementById('battle-modal');
+            isBattleModalOpen = !isBattleModalOpen;
+            
+            if (isBattleModalOpen) {
+                modal.classList.remove('hidden');
+                setDifficulty('easy'); 
+                renderBattleInventory();
+                document.getElementById('battle-log').innerHTML = '<p class="text-center text-gray-500 mt-10">난이도와 출전 포켓몬을 선택하고 전투를 시작하세요.</p>';
+                battleMyUid = null;
+                updateBattleUI();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderBattleInventory() {
+            const grid = document.getElementById('battle-inventory');
+            grid.innerHTML = '';
+            
+            if (inventory.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-10 text-sm">포켓몬이 없습니다.</p>';
+                return;
+            }
+
+            inventory.forEach(pokemon => {
+                const card = document.createElement('div');
+                const isSelected = battleMyUid === pokemon.uid;
+                
+                card.className = `relative cursor-pointer rounded-lg border p-2 flex flex-col items-center transition transform hover:scale-105 rarity-${pokemon.rarity} ${isSelected ? 'ring-2 ring-white shadow-lg bg-gray-700' : 'opacity-70 hover:opacity-100 bg-gray-800'}`;
+                card.onclick = () => selectBattleFighter(pokemon.uid);
+
+                card.innerHTML = `
+                    <div class="absolute top-1 left-1 bg-black/60 px-1 py-0.5 rounded text-[10px] text-yellow-300 font-bold">Lv.${pokemon.level}</div>
+                    <img src="${getPixelSprite(pokemon.id)}" alt="${pokemon.name}" class="w-10 h-10 rendering-pixelated" loading="lazy">
+                    <p class="text-white text-xs font-bold mt-1 text-center truncate w-full">${pokemon.name}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectBattleFighter(uid) {
+            if (isBattling) return;
+            battleMyUid = uid;
+            renderBattleInventory();
+            updateBattleUI();
+        }
+
+        function setDifficulty(diff) {
+            if (isBattling) return;
+            battleDifficulty = diff;
+            
+            const diffs = ['easy', 'normal', 'hard', 'veryhard'];
+            diffs.forEach(d => {
+                const btn = document.getElementById(`btn-diff-${d}`);
+                btn.className = `px-3 py-1.5 rounded font-bold border-2 text-${getColorByDiff(d)}-500 border-${getColorByDiff(d)}-500 hover:bg-${getColorByDiff(d)}-500/20 transition`;
+                if (d === diff) {
+                    btn.classList.remove(`text-${getColorByDiff(d)}-500`, 'hover:bg-opacity-20');
+                    btn.classList.add(`bg-${getColorByDiff(d)}-600`, `border-${getColorByDiff(d)}-600`, 'text-white', 'shadow-lg');
+                }
+            });
+
+            generateEnemy();
+            updateBattleUI();
+        }
+
+        function getColorByDiff(diff) {
+            if(diff === 'easy') return 'green';
+            if(diff === 'normal') return 'blue';
+            if(diff === 'hard') return 'purple';
+            if(diff === 'veryhard') return 'red';
+        }
+
+        function generateEnemy() {
+            let pool = [];
+            let level = 1;
+            let potions = 0;
+            let potionType = 'potion';
+            
+            if (battleDifficulty === 'easy') {
+                pool = POKEMON_DB.filter(p => p.rarity === 'Common');
+                level = Math.floor(Math.random() * 3) + 1; // 1~3
+                document.getElementById('info-diff-text').innerText = '쉬움 (Lv.1~3)';
+                document.getElementById('info-diff-text').className = 'text-2xl font-bold text-green-400 mb-6';
+                potions = Math.random() < 0.3 ? 1 : 0; // 30% 확률로 상처약 1개
+                potionType = 'potion';
+            } else if (battleDifficulty === 'normal') {
+                pool = POKEMON_DB.filter(p => p.rarity === 'Rare' || p.rarity === 'Epic');
+                level = Math.floor(Math.random() * 4) + 5; // 5~8
+                document.getElementById('info-diff-text').innerText = '보통 (Lv.5~8)';
+                document.getElementById('info-diff-text').className = 'text-2xl font-bold text-blue-400 mb-6';
+                potions = 1; // 무조건 고급상처약 1개
+                potionType = 'super';
+            } else if (battleDifficulty === 'hard') {
+                pool = POKEMON_DB.filter(p => p.rarity === 'Epic' || p.rarity === 'Legendary');
+                level = Math.floor(Math.random() * 3) + 10; // 10~12
+                document.getElementById('info-diff-text').innerText = '어려움 (Lv.10~12)';
+                document.getElementById('info-diff-text').className = 'text-xl lg:text-2xl font-bold text-purple-400 mb-6';
+                potions = 2; // 무조건 고급상처약 2개
+                potionType = 'super';
+            } else if (battleDifficulty === 'veryhard') {
+                pool = POKEMON_DB.filter(p => p.rarity === 'Legendary' || p.rarity === 'Mythic' || p.rarity === 'Divine');
+                level = 15; // Max level
+                document.getElementById('info-diff-text').innerText = '매우어려움 (Lv.15)';
+                document.getElementById('info-diff-text').className = 'text-xl lg:text-2xl font-bold text-red-500 mb-6 drop-shadow-md';
+                potions = 2; // 무조건 풀회복약 2개
+                potionType = 'max';
+            }
+
+            const base = pool[Math.floor(Math.random() * pool.length)];
+            
+            let hp = base.baseHp;
+            let atk = base.baseAtk;
+            for(let i=1; i<level; i++) {
+                hp += Math.floor(base.baseHp * 0.15);
+                atk += Math.floor(base.baseAtk * 0.15);
+            }
+
+            battleEnemy = {
+                ...base,
+                level: level,
+                hp: hp,
+                maxHp: hp,
+                atk: atk,
+                potions: potions,
+                potionType: potionType
+            };
+
+            document.getElementById('info-enemy-hp').innerText = hp;
+            document.getElementById('info-enemy-atk').innerText = atk;
+            document.getElementById('enemy-info-panel').classList.remove('opacity-50');
+        }
+
+        function updateBattleUI() {
+            const myName = document.getElementById('battle-my-name');
+            const myImg = document.getElementById('battle-my-img');
+            const myImgBox = document.getElementById('battle-my-img-box');
+            
+            if (battleMyUid) {
+                const p = inventory.find(i => i.uid === battleMyUid);
+                myName.innerText = `Lv.${p.level} ${p.name}`;
+                myName.className = `text-xl font-bold mb-2 text-${p.rarity} truncate w-full text-center`;
+                myImg.src = getOfficialArtwork(p.id);
+                myImg.classList.remove('hidden');
+                myImgBox.className = `w-32 h-32 bg-gray-900 border-4 rounded-full flex items-center justify-center mb-2 overflow-hidden relative rarity-${p.rarity}`;
+                
+                document.getElementById('battle-my-hp').innerText = p.hp;
+                document.getElementById('battle-my-maxhp').innerText = p.hp;
+                document.getElementById('battle-my-atk').innerText = p.atk;
+                document.getElementById('battle-my-hp-bar').style.width = '100%';
+                
+                p.battleHp = p.hp;
+                p.battleMaxHp = p.hp;
+            } else {
+                myName.innerText = "선택 대기중";
+                myName.className = "text-xl font-bold text-gray-500 mb-2 truncate w-full text-center";
+                myImg.classList.add('hidden');
+                myImgBox.className = "w-32 h-32 bg-gray-800 border-4 border-gray-600 rounded-full flex items-center justify-center mb-2 overflow-hidden relative";
+                document.getElementById('battle-my-hp').innerText = "0";
+                document.getElementById('battle-my-maxhp').innerText = "0";
+                document.getElementById('battle-my-atk').innerText = "0";
+                document.getElementById('battle-my-hp-bar').style.width = '0%';
+            }
+
+            if (battleEnemy) {
+                document.getElementById('battle-enemy-name').innerText = `Lv.${battleEnemy.level} ${battleEnemy.name}`;
+                document.getElementById('battle-enemy-name').className = `text-xl font-bold mb-2 text-${battleEnemy.rarity} truncate w-full text-center`;
+                const eImg = document.getElementById('battle-enemy-img');
+                eImg.src = getOfficialArtwork(battleEnemy.id);
+                eImg.classList.remove('hidden');
+                document.getElementById('battle-enemy-img-box').className = `w-32 h-32 bg-gray-900 border-4 rounded-full flex items-center justify-center mb-2 overflow-hidden relative rarity-${battleEnemy.rarity}`;
+                
+                document.getElementById('battle-enemy-hp').innerText = battleEnemy.hp;
+                document.getElementById('battle-enemy-maxhp').innerText = battleEnemy.maxHp;
+                document.getElementById('battle-enemy-atk').innerText = battleEnemy.atk;
+                document.getElementById('battle-enemy-hp-bar').style.width = '100%';
+                document.getElementById('battle-enemy-hp-bar').className = 'h-full bg-red-500 transition-all duration-300';
+            }
+
+            const btnStart = document.getElementById('btn-start-battle');
+            btnStart.disabled = !battleMyUid || isBattling;
+        }
+
+        async function startBattle() {
+            if (!battleMyUid || !battleEnemy || isBattling) return;
+            
+            const myPoke = inventory.find(i => i.uid === battleMyUid);
+            if (!myPoke) return;
+
+            isBattling = true;
+            updateBattleUI(); 
+            
+            const logBox = document.getElementById('battle-log');
+            logBox.innerHTML = ''; 
+
+            function addLog(msg, type = 'normal') {
+                const p = document.createElement('p');
+                p.innerHTML = msg;
+                if(type === 'attack') p.className = 'text-blue-300 mb-1';
+                if(type === 'enemyAttack') p.className = 'text-red-300 mb-1';
+                if(type === 'enemyHeal') p.className = 'text-green-300 mb-1';
+                if(type === 'win') p.className = 'text-green-400 font-bold text-lg mt-4 text-center';
+                if(type === 'lose') p.className = 'text-gray-500 font-bold text-lg mt-4 text-center';
+                logBox.appendChild(p);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            addLog(`⚔️ <b>${myPoke.name}</b> vs <b>${battleEnemy.name}</b> 전투 시작!`, 'normal');
+            await sleep(800);
+
+            let turn = 1;
+            while (myPoke.battleHp > 0 && battleEnemy.hp > 0) {
+                // 내 턴
+                addLog(`[턴 ${turn}] <b>${myPoke.name}</b>의 <span class="text-yellow-400">${myPoke.currentSkill}</span>!`, 'attack');
+                battleEnemy.hp -= myPoke.atk;
+                if(battleEnemy.hp < 0) battleEnemy.hp = 0;
+                
+                document.getElementById('battle-enemy-hp').innerText = battleEnemy.hp;
+                const eHpPercent = (battleEnemy.hp / battleEnemy.maxHp) * 100;
+                document.getElementById('battle-enemy-hp-bar').style.width = `${eHpPercent}%`;
+                
+                const eImgBox = document.getElementById('battle-enemy-img-box');
+                eImgBox.classList.add('gacha-shake');
+                eImgBox.style.boxShadow = 'inset 0 0 50px rgba(255,0,0,0.5)';
+                await sleep(300);
+                eImgBox.classList.remove('gacha-shake');
+                eImgBox.style.boxShadow = '';
+                
+                addLog(`▶ 적 <b>${battleEnemy.name}</b>에게 ${myPoke.atk} 피해! (남은 HP: ${battleEnemy.hp})`);
+                await sleep(700);
+
+                if (battleEnemy.hp <= 0) break;
+
+                // 적 턴 (아이템 사용 확인 로직 - 체력 35% 미만시 발동)
+                if (battleEnemy.hp < battleEnemy.maxHp * 0.35 && battleEnemy.potions > 0) {
+                    let healAmount = 0;
+                    let itemName = '';
+                    
+                    if (battleEnemy.potionType === 'potion') {
+                        healAmount = Math.floor(battleEnemy.maxHp * 0.3);
+                        itemName = '상처약';
+                    } else if (battleEnemy.potionType === 'super') {
+                        healAmount = Math.floor(battleEnemy.maxHp * 0.5);
+                        itemName = '고급상처약';
+                    } else {
+                        healAmount = battleEnemy.maxHp;
+                        itemName = '풀회복약';
+                    }
+                    
+                    battleEnemy.hp += healAmount;
+                    if (battleEnemy.hp > battleEnemy.maxHp) battleEnemy.hp = battleEnemy.maxHp;
+                    battleEnemy.potions--;
+
+                    addLog(`[턴 ${turn}] 적 <b>${battleEnemy.name}</b>이(가) <span class="text-green-400">${itemName}</span>을(를) 사용했다!`, 'enemyHeal');
+                    
+                    document.getElementById('battle-enemy-hp').innerText = battleEnemy.hp;
+                    const eHpPercent = (battleEnemy.hp / battleEnemy.maxHp) * 100;
+                    document.getElementById('battle-enemy-hp-bar').style.width = `${eHpPercent}%`;
+                    
+                    const eImgBox = document.getElementById('battle-enemy-img-box');
+                    eImgBox.style.boxShadow = 'inset 0 0 50px rgba(74,222,128,0.8)';
+                    await sleep(500);
+                    eImgBox.style.boxShadow = '';
+                    
+                    addLog(`▶ 적 <b>${battleEnemy.name}</b>의 체력이 회복되었다! (남은 HP: ${battleEnemy.hp})`);
+                    await sleep(700);
+                    
+                    turn++;
+                    continue; // 아이템을 쓴 턴에는 공격하지 않음 (턴 넘김)
+                }
+
+                // 적 턴 (일반 공격)
+                addLog(`[턴 ${turn}] 적 <b>${battleEnemy.name}</b>의 <span class="text-yellow-400">${battleEnemy.skill}</span>!`, 'enemyAttack');
+                myPoke.battleHp -= battleEnemy.atk;
+                if(myPoke.battleHp < 0) myPoke.battleHp = 0;
+
+                document.getElementById('battle-my-hp').innerText = myPoke.battleHp;
+                const myHpPercent = (myPoke.battleHp / myPoke.battleMaxHp) * 100;
+                document.getElementById('battle-my-hp-bar').style.width = `${myHpPercent}%`;
+
+                const mImgBox = document.getElementById('battle-my-img-box');
+                mImgBox.classList.add('gacha-shake');
+                mImgBox.style.boxShadow = 'inset 0 0 50px rgba(255,0,0,0.5)';
+                await sleep(300);
+                mImgBox.classList.remove('gacha-shake');
+                mImgBox.style.boxShadow = '';
+                
+                addLog(`▶ <b>${myPoke.name}</b>에게 ${battleEnemy.atk} 피해! (남은 HP: ${myPoke.battleHp})`);
+                await sleep(700);
+
+                turn++;
+            }
+
+            await sleep(500);
+            if (myPoke.battleHp > 0) {
+                const rewards = { 'easy': 50, 'normal': 150, 'hard': 500, 'veryhard': 2000 };
+                const reward = rewards[battleDifficulty];
+                addLog(`🎉 전투 승리! <b>${reward} 🪙</b> 획득!`, 'win');
+                updateCoins(reward);
+                showFeedbackMessage(`배틀 승리! +${reward}🪙`, 'text-yellow-400');
+            } else {
+                addLog(`💀 전투 패배... 나의 <b>${myPoke.name}</b>(이)가 쓰러졌습니다.`, 'lose');
+                showFeedbackMessage(`배틀 패배...`, 'text-gray-500');
+            }
+
+            isBattling = false;
+            
+            setTimeout(() => {
+                generateEnemy(); 
+                myPoke.battleHp = myPoke.battleMaxHp; 
+                updateBattleUI();
+            }, 2000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 초기화 실행
+        updateCoins(0); // 잔액 표시 갱신 및 버튼 체크
+    </script>
+</body>
+</html>
